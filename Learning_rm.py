@@ -1,17 +1,23 @@
 import numpy as np
-
 import sys
 
-class Struct:
-    pass
+from ScalarSchedule import *
+
+class NetReg:
+    def __init__(self):
+        self.dropout = False
+        self.drop_rate = 0.8
+        self.weight_penalty = 0.0
+        self.max_unit_weight = 15
+        self.max_constraint= False
 
 class NetTrainParams:
     def __init__(self):
         self.batchsize  =   50
         self.maxepoch   =   100
         self.period     =   10
-        self.mu         =   0.5
-        self.eta        =   0.1 
+        self.mu         =   LinearSchedule(0.5, 0.99, 500)
+        self.eta        =   ExponentialSchedule(10.0, 0.998)
 
 def logistic(x):
     return 1.0 / (1.0 + (np.exp(-x)))
@@ -24,14 +30,14 @@ def LogisticUp(inputs, weights, bias, reg):
     omega = np.dot(inputs, weights) + bias
     activation = logistic(omega)
     deriv = activation * (1 - activation)
-    cost = 0.5 * reg.weightPenalty * np.sum(weights**2)
+    cost = 0.5 * reg.weight_penalty * np.sum(weights**2)
     return activation, cost, deriv, inputs
 
 def SoftplusUp(inputs, weights, bias, reg):
     omega = np.dot(inputs, weights) + bias
     activation = softplus(omega)
     deriv = logistic(omega)
-    cost = 0.5 * reg.weightPenalty * np.sum(weights**2)
+    cost = 0.5 * reg.weight_penalty * np.sum(weights**2)
     return activation, cost, deriv, inputs
 
 def LinearUpWithZero(inputs, weights, bias, reg):
@@ -47,7 +53,7 @@ def LinearUp(inputs, weights, bias, reg):
     omega = np.dot(inputs, weights) + bias;
     deriv = np.ones_like(omega)
     activation = omega
-    cost = 0.5 * reg.weightPenalty * np.sum(weights **2)
+    cost = 0.5 * reg.weight_penalty * np.sum(weights **2)
     return activation, cost, deriv, inputs
 
 def SoftmaxUp(inputs, weights, bias, reg):
@@ -56,14 +62,14 @@ def SoftmaxUp(inputs, weights, bias, reg):
     safeOmega = omega - omega.max(axis=1)[:,np.newaxis]
     expVals = np.exp(safeOmega)
     activation = expVals / expVals.sum(axis=1)[:,np.newaxis]
-    cost = 0.5 * reg.weightPenalty * np.sum(weights**2)
+    cost = 0.5 * reg.weight_penalty * np.sum(weights**2)
     deriv = activation * (1 - activation)
     return activation, cost, deriv, inputs
 
-def DropoutUp(inputs, weights, bias, reg):
+def DropoutProcess(inputs, reg):
     dropFlips = np.random.random_sample(inputs.shape)
-    usedInput = inputs * (dropFlips > reg.dropoutProb);    
-    return LinearUpWithZero(usedInput, weights, bias, reg)
+    usedInput = inputs * (dropFlips > reg.drop_rate);    
+    return usedInput
      
     
 class Layer:
@@ -76,9 +82,9 @@ class Layer:
         self.reg = reg
 
     def up(self, inputs):
-        if self.layertype == 'Dropout':
-            return DropoutUp(inputs, self.W, self.h, self.reg)
-        elif self.layertype == 'Logistic':
+        if self.reg.dropout:
+            inputs = DropoutProcess(inputs, self.reg)
+        if self.layertype == 'Logistic':
             return LogisticUp(inputs, self.W, self.h, self.reg)
         elif self.layertype == 'Softplus':
             return SoftplusUp(inputs, self.W, self.h, self.reg)
@@ -94,7 +100,7 @@ class Layer:
     def down(self, inputs, deriv, error_in):
         error_out = np.dot(  deriv * error_in, self.W.transpose()  )
         Wgrad = np.dot(inputs.transpose(), (error_in * deriv))  / inputs.shape[0]
-        Wgrad = Wgrad + (self.reg.weightPenalty * self.W)
+        Wgrad = Wgrad + (self.reg.weight_penalty * self.W)
         hgrad = np.sum(error_in * deriv, axis=0) / inputs.shape[0]
         grad = np.append(Wgrad.flatten(), hgrad.flatten())
         return error_out, grad
@@ -151,10 +157,10 @@ class Net:
     def predict(self, inputs):
         data = inputs
         for layer in self.Layers:
-            if layer.layertype is not 'Dropout':
-                [data, c, d, i] = layer.up(data)
+            if layer.reg.dropout:
+                [data, c, d, i] = layer.up(data, layer.W * (1 - layer.reg.drop_rate), layer.h, layer.reg)
             else:
-                [data, c, d, i] = DropoutUp(data, layer.W * (1 - layer.reg.dropoutProb), layer.h, layer.reg)
+                [data, c, d, i] = layer.up(data)
         return data
 
     def thetaSize(self):
@@ -214,6 +220,15 @@ class Net:
         newTheta = curTheta + theta
         self.setTheta(newTheta)
 
+    def enforce_constraints(self):
+        for layer in self.Layers:
+            if layer.reg.max_constraint:
+                squared_len = (layer.W * layer.W).sum(axis=0)
+                needs_resize = squared_len > layer.reg.max_unit_weight
+                no_resize = square_len <= layer.reg.max_unit_weight
+                resize_params = np.ones(len(squared_len))*no_resize + np.sqrt(layer.reg.max_unit_weight/(needs_resize * squared_len))
+                layer.W = layer.W / resize_params
+        
 
 
 def getBatches(inputs, targets, tp):
@@ -239,14 +254,16 @@ def train_sgd(model, inputs, targets, tp):
     batchData, batchTargets = getBatches(inputs, targets, tp)
     
     for epoch in xrange(tp.maxepoch):
-        
+        mu = tp.mu.get()
+        eta = tp.eta.get() 
         for i in xrange(len(batchData)):
             data = batchData[i]
             target = batchTargets[i]
             g = model.netGradient(data, target)
-            momentum *= tp.mu 
+            momentum *= mu
             momentum -= g
-            model.addTheta(tp.eta * momentum)
+            model.addTheta(eta * momentum)
+            model.enforce_constraints()
         [totalcost, errcost] = model.cost(batchData[i], batchTargets[i])
         print "[%d] Sample cost: %f\t%f" % (epoch, totalcost, errcost)
         sys.stdout.flush()
@@ -257,143 +274,19 @@ def train_sgd_valid(model, inputs, targets, validInput, validTargets, tp):
     batchData, batchTargets = getBatches(inputs, targets, tp)
     
     for epoch in xrange(tp.maxepoch):
+        mu = tp.mu.get()
+        eta = tp.eta.get() 
         
         for i in xrange(len(batchData)):
             data = batchData[i]
             target = batchTargets[i]
             g = model.netGradient(data, target)
-            momentum *= tp.mu 
+            momentum *= mu
             momentum -= g
-            model.addTheta(tp.eta * momentum)
+            model.addTheta(eta * momentum)
+            model.enforce_constraints()
         [totalcost, errcost] = model.cost(validInput, validTargets)
         print "[%d] Sample cost: %f\t%f" % (epoch, totalcost, errcost)
         sys.stdout.flush()
 
 
-def numericalGradient(testnet, inputs, targets):
-    originalTheta = testnet.getTheta()
-    nTests = len(originalTheta)
-    grad = np.zeros((1, nTests))
-    tiny = .0001
-
-    for i in xrange(nTests):
-        theta_up = originalTheta.copy()
-        theta_up[i] = theta_up[i] + tiny
-        theta_dn = originalTheta.copy()
-        theta_dn[i] = theta_dn[i] - tiny
-        testnet.setTheta(theta_up)
-        c1, _ = testnet.cost(inputs, targets)
-        testnet.setTheta(theta_dn)
-        c2, _ = testnet.cost(inputs, targets)
-        grad[0,i] = (c1 - c2) / (2 * tiny)
-
-    return grad
-        
-    
-def LayerTest():
-    inDims   = 16
-    outDims  = 8
-    nSamples = 10 
-    tiny = 1e-5
-    
-    targets = np.random.randn(nSamples, outDims)
-    inputs = np.random.rand(nSamples, inDims)
-    lts = ['Logistic',  'Softplus', 'LinearZero']
-    reg = Struct()
-    reg.weightPenalty = 0.001
-    
-    for lt in lts:
-        net = Net(arch=[inDims, outDims], layertypes=[lt], regs=[reg])
-        ngrad = numericalGradient(net, inputs, targets).flatten()
-        agrad = net.netGradient(inputs, targets).flatten()
-        diffs = (ngrad - agrad)**2
-        diffs[diffs <  tiny] = 0 
-        nz = np.count_nonzero(diffs)
-        if nz > 0:
-            print lt + ' failed'
-            for i in xrange(len(diffs)):
-                if diffs[i] > tiny:
-                    print i, ngrad[i], agrad[i], diffs[i]
-            
-        else:
-            print lt + ' passed'
-            
-def SoftmaxTest():
-    inDims = 16
-    outDims = 8
-    nSamples = 10
-    tiny = 1e-5
-    
-    targets = np.random.randn(nSamples, outDims)
-    targets[targets < targets.max(axis=1)[:,np.newaxis]] = 0
-    targets[targets != 0] = 1
-    inputs = np.random.rand(nSamples, inDims)
-    lt = 'Softmax'
-    reg = Struct()
-    reg.weightPenalty = 0.001
-    
-    net = Net(arch=[inDims, outDims], layertypes=[lt], regs=[reg])
-    ngrad = numericalGradient(net, inputs, targets).flatten()
-    agrad = net.netGradient(inputs, targets).flatten()
-    diffs = (ngrad - agrad) ** 2
-    diffs[diffs < tiny] = 0 
-    nz = np.count_nonzero(diffs)
-    if nz > 0:
-        print lt + ' failed'
-        for i in xrange(len(diffs)):
-            if diffs[i] > tiny:
-                print i, ngrad[i], agrad[i], diffs[i]
-            
-    else:
-        print lt + ' passed'
-    
-
-def NetTest():
-    import os
-    mnist_path = os.path.join(os.environ['DATA_HOME'], 'mnist', 'MNISTTrainData.npy')
-    print 'Loading data...'
-    data = np.load(mnist_path)
-    print '...done'
-    tp = Struct()
-    tp.maxepoch=20
-    tp.eta=0.1
-    tp.batchsize=100
-    reg = Struct()
-    reg.weightPenalty = 0.001
-    regs = [reg] * 2
-    arch = [784, 100, 784]
-    lts=['Logistic', 'Logistic']
-    net = Net(arch, lts, regs)
-    tp.mu = 0.5
-    train_sgd(net, data, data, tp)
-    
-def ClassificationTest():
-    import os
-    mnist_path = os.path.join(os.environ['DATA_HOME'], 'mnist')
-    mnist_data_path = os.path.join(mnist_path, 'MNISTTrainData.npy')
-    data = np.load(mnist_data_path)
-    mnist_labels_path = os.path.join(mnist_path, 'MNISTTrainLabels.npy')
-    labels = np.load(mnist_labels_path)
-    targets = np.zeros((10, labels.shape[0]))
-    for i in xrange(len(labels)):
-        targets[i,labels[i]] = 1
-
-    tp = Struct()
-    tp.maxepoch=20
-    tp.eta=0.1
-    tp.batchsize=100
-    reg = Struct()
-    reg.weightPenalty = 0.001
-    regs = [reg] * 2
-    arch = [784, 100, 10]
-    lts=['Logistic', 'Softmax']
-    net = Net(arch, lts, regs, 'SoftmaxClassification')
-    tp.mu = 0.5
-    train_sgd(net, data, targets, tp)
-    
-
-if __name__ == '__main__':
-    SoftmaxTest()
-    
-         
-    
