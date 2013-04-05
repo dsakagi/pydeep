@@ -1,6 +1,5 @@
 import numpy as np
 import numpy.random
-import cudamat as cm
 
 import sys
 
