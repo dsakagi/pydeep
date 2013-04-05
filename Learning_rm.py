@@ -97,6 +97,25 @@ class Layer:
         else:
             raise Exception(self.layertype + " not understood as a layertype")
 
+    def predict(self, inputs):
+        if self.reg.dropout:
+            W = self.W * (1 - self.reg.drop_rate)
+        else:
+            W = self.W
+        if self.layertype == 'Logistic':
+            return LogisticUp(inputs, W, self.h, self.reg)
+        elif self.layertype == 'Softplus':
+            return SoftplusUp(inputs, W, self.h, self.reg)
+        elif self.layertype == 'LinearZero':
+            return LinearUpWithZero(inputs, W, self.h, self.reg)
+        elif self.layertype == 'Softmax':
+            return SoftmaxUp(inputs, W, self.h, self.reg)
+        elif self.layertype == 'Linear':
+            return LinearUp(inputs, W, self.h, self.reg)
+        else:
+            raise Exception(self.layertype + " not understood as a layertype")
+        
+
     def down(self, inputs, deriv, error_in):
         error_out = np.dot(  deriv * error_in, self.W.transpose()  )
         Wgrad = np.dot(inputs.transpose(), (error_in * deriv))  / inputs.shape[0]
@@ -157,10 +176,7 @@ class Net:
     def predict(self, inputs):
         data = inputs
         for layer in self.Layers:
-            if layer.reg.dropout:
-                [data, c, d, i] = layer.up(data, layer.W * (1 - layer.reg.drop_rate), layer.h, layer.reg)
-            else:
-                [data, c, d, i] = layer.up(data)
+            [data, c, d, i] = layer.predict(data)
         return data
 
     def thetaSize(self):
@@ -225,7 +241,7 @@ class Net:
             if layer.reg.max_constraint:
                 squared_len = (layer.W * layer.W).sum(axis=0)
                 needs_resize = squared_len > layer.reg.max_unit_weight
-                no_resize = square_len <= layer.reg.max_unit_weight
+                no_resize = squared_len <= layer.reg.max_unit_weight
                 resize_params = np.ones(len(squared_len))*no_resize + np.sqrt(layer.reg.max_unit_weight/(needs_resize * squared_len))
                 layer.W = layer.W / resize_params
         

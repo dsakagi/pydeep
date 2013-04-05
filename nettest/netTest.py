@@ -26,6 +26,7 @@ arch = [train.shape[1], nHidden, train.shape[1]]
 lts = ('Logistic', 'Logistic')
 reg = Learning.NetReg()
 reg.dropout = True
+reg.max_constraint = False
 regs = [reg] * 2
 regs[0].drop_rate = 0.2
 regs[1].drop_rate = 0.5
@@ -40,10 +41,23 @@ Learning.train_sgd(net, train, train, ntp)
 
 
 
-Wimg_cm = utils.tile_raster_images(net.Layers[0].W.T, (28, 28), ViewDimensions)
+Wimg = utils.tile_raster_images(net.Layers[0].W.T, (28, 28), ViewDimensions)
 
 pylab.figure(1)
-pylab.imshow(Wimg_cm)
+pylab.imshow(Wimg)
 pylab.set_cmap('gray')
 pylab.axis('off')
+
+dimg_src = utils.tile_raster_images(train, (28,28), ViewDimensions)
+pylab.figure(2)
+pylab.imshow(dimg_src)
+pylab.axis('off')
+
+X = net.predict(train)
+dimg_rec = utils.tile_raster_images(X, (28,28), ViewDimensions)
+pylab.figure(3)
+pylab.imshow(dimg_rec)
+pylab.axis('off')
+
+
 pylab.show()
