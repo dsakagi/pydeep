@@ -6,7 +6,7 @@ class ConstantSchedule:
         self.v = v
 
     def get(self):
-        return v
+        return self.v
 
 class LinearSchedule:
     def __init__(self, init, final, n_steps):

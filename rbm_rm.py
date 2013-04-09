@@ -3,12 +3,13 @@ import numpy.random
 
 import sys
 
+import ScalarSchedule
 
 class RBMTrainParams:
     def __init__(self):
         self.k          = 1        # for Contrastive Divergence
-        self.mu         = 0.5      # momentum update parameter
-        self.eta        = 0.1      # stepsize
+        self.mu         = ScalarSchedule.LinearSchedule(0.5, 0.99,100)      # momentum update parameter
+        self.eta        = ScalarSchedule.ConstantSchedule(0.1)      # stepsize
         self.penalty    = 0.001    # weight penalty
         self.period     = 10       # pause to save this often
         self.maxepoch   = 100      # train this many iterations
@@ -71,8 +72,6 @@ def contrastiveDivergence(model, data, k=1):
 
 def learn(model, data, validation, trainparams):
     k = trainparams.k
-    mu = trainparams.mu
-    eta = trainparams.eta
     wp = trainparams.penalty # The L2 Weight Penalty for W
     maxepoch = trainparams.maxepoch
     period = trainparams.period
@@ -86,6 +85,8 @@ def learn(model, data, validation, trainparams):
     print 'Epoch\tRecons. Err\tMean Act.\tMax Act.\tMin Act.\tAct. StdDev.'
 
     for epoch in xrange(maxepoch):
+        mu = trainparams.mu.get()
+        eta = trainparams.eta.get()
         
         if (epoch + 1) % period == 0:
             # TODO Save a temp of the model at this point  
