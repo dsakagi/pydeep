@@ -57,8 +57,7 @@ def LinearUp(inputs, weights, bias, reg):
     return activation, cost, deriv, inputs
 
 def SoftmaxUp(inputs, weights, bias, reg):
-    #TODO: This implementation does not use biases - do you want it to?
-    omega = np.dot(inputs, weights)
+    omega = np.dot(inputs, weights) + bias
     safeOmega = omega - omega.max(axis=1)[:,np.newaxis]
     expVals = np.exp(safeOmega)
     activation = expVals / expVals.sum(axis=1)[:,np.newaxis]
@@ -144,8 +143,8 @@ class Layer:
 def MeanSquaredErr(x, y):
     return (0.5 * np.sum((x -y)**2)) / x.shape[0]
 
-def SoftmaxClassificationErr(pred, truth):
-    return -1.0 * (np.sum(truth * np.log(pred))) / pred.shape[0]
+def CrossEntropyErr(pred, truth):
+    return (-1.0/pred.shape[0]) * (np.sum(truth * np.log(pred)))
 
 class Net:
     def __init__(self, arch, layertypes, regs, errType='MSE'):
@@ -166,8 +165,8 @@ class Net:
         errCost = 0
         if self.errType == 'MSE':
             errCost = MeanSquaredErr(data, target)
-        elif self.errType == 'SoftmaxClassification':
-            errCost = SoftmaxClassificationErr(data, target)
+        elif self.errType == 'CrossEntropy':
+            errCost = CrossEntropyErr(data, target)
         else:
             raise Exception('Error type ' + self.errType + ' not understood')
         totalcost = regCost + errCost
@@ -242,7 +241,7 @@ class Net:
                 squared_len = (layer.W * layer.W).sum(axis=0)
                 needs_resize = squared_len > layer.reg.max_unit_weight
                 no_resize = squared_len <= layer.reg.max_unit_weight
-                resize_params = np.ones(len(squared_len))*no_resize + np.sqrt(layer.reg.max_unit_weight/(needs_resize * squared_len))
+                resize_params = np.ones(len(squared_len))*no_resize + needs_resize*np.sqrt(layer.reg.max_unit_weight/squared_len)
                 layer.W = layer.W / resize_params
         
 
