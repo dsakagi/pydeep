@@ -59,10 +59,10 @@ def SoftmaxTest():
     targets[targets != 0] = 1
     inputs = np.random.rand(nSamples, inDims)
     lt = 'Softmax'
-    reg = Struct()
+    reg = NetReg()
     reg.weight_penalty = 0.001
     
-    net = Net(arch=[inDims, outDims], layertypes=[lt], regs=[reg])
+    net = Net(arch=[inDims, outDims], layertypes=[lt], regs=[reg], errType='CrossEntropy')
     ngrad = numericalGradient(net, inputs, targets).flatten()
     agrad = net.netGradient(inputs, targets).flatten()
     diffs = (ngrad - agrad) ** 2
@@ -95,6 +95,27 @@ def NetTest():
     lts=['Logistic', 'Logistic']
     net = Net(arch, lts, regs)
     tp.mu = 0.5
+    train_sgd(net, data, data, tp)
+
+def DropoutTest():
+    import os
+    mnist_path = os.path.join(os.environ['DATA_HOME'], 'mnist', 'MNISTTrainData.npy')
+    print 'Loading data...'
+    data = np.load(mnist_path)
+    print '...done'
+    tp = NetTrainParams()
+    tp.maxepoch=20
+    tp.batchsize=100
+    arch = [784, 100, 784]
+    lts=['Logistic', 'Logistic']
+    regs = [NetReg() for x in range(2)]
+    for reg in regs:
+        reg.dropout=True
+        reg.drop_rate = 0.5
+        reg.max_constraint = True
+        reg.max_unit_weight = 10
+    regs[0].drop_rate = 0.2
+    net = Net(arch, lts, regs)
     train_sgd(net, data, data, tp)
     
 def ClassificationTest():
