@@ -242,7 +242,7 @@ class Net:
                 needs_resize = squared_len > layer.reg.max_unit_weight
                 no_resize = squared_len <= layer.reg.max_unit_weight
                 resize_params = np.ones(len(squared_len))*no_resize + needs_resize*np.sqrt(layer.reg.max_unit_weight/squared_len)
-                layer.W = layer.W / resize_params
+                layer.W = layer.W * resize_params
         
 
 
