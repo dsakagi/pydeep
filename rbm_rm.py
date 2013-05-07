@@ -49,6 +49,24 @@ def getBatches(data, batchsize):
     return batches
 
 def contrastiveDivergence(model, data, k=1):
+    '''
+    contrastiveDivergence(model, data, k=1)
+
+    Perform CD-k
+
+    Parameters:
+    model  = RBM model (either RBM or GV_RBM) created with constructor
+             in this module
+    data   = (nSamples x nDims) data to be learned
+    k      = number of cycles in Gibbs chain to perform (default 1)
+
+    Returns:
+    dw, dh, dv
+        These are the weight updates to make to the model
+        dh = (nHidden X 1)
+        dv = (nVisible X 1)
+        dW = (nVisible X nHidden)
+    '''
     nSamples = data.shape[0]
     scaleFactor = 1.0/nSamples;
     poshid = model.v2h(data)

@@ -28,11 +28,11 @@ TP = rbm_rm.RBMTrainParams()
 TP.maxepoch = 15
 
 rm_learner = rbm_rm.RBM(nHidden, train_rm.shape[1])
-rm_learner.setVfromSample(train_rm)
+#rm_learner.setVfromSample(train_rm)
 rbm_rm.learn(rm_learner, train_rm, valid_rm, TP) 
 
 cm_learner = rbm_cm.RBM(nHidden, train_cm.shape[0])
-cm_learner.setVfromSample(train_cm)
+#cm_learner.setVfromSample(train_cm)
 rbm_cm.learn(cm_learner, train_cm, valid_cm, TP)
 
 
