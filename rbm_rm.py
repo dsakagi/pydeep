@@ -119,8 +119,7 @@ def learn(model, data, validation, trainparams):
             model.W = model.W + wM
             model.h = model.h + hM
             model.v = model.v + vM
-  
-        
+
         # Now output some statistics on the hidden representation      
         valhid = model.up(validation)
         valstats = valhid.mean(axis=1)
