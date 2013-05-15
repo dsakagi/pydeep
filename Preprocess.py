@@ -76,12 +76,18 @@ def mean_zero_unit_variance(arr, mean_vector=None, std_vector=None, samples_in='
    
 def labels_to_one_hot(labels):
     '''
-    Given a 1-dimensional array-like of integer labels, convert to a one-hot representation
+    Given a 1-dimensional array-like of labels, convert to a one-hot representation
     '''
     #TODO - Data checks
     n_samples = len(labels)
-    n_dims = 1+np.max(labels)
+    dlabels = {}
+    ix = 0
+    for label in labels:
+        if label not in dlabels:
+            dlabels[label] = ix
+            ix += 1
+    n_dims = len(dlabels)
     arr = np.zeros((n_samples, n_dims))
     for i in xrange(n_samples):
-        arr[i, labels[i]] = 1.0
-    return arr
+        arr[i, dlabels[labels[i]]] = 1.0
+    return arr, dlabels
