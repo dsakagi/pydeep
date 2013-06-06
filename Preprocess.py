@@ -18,9 +18,9 @@ def unit_range(arr, data_min=None, data_max=None, samples_in='row'):
     nDims = arr.shape[dimsIn]
     theshape = [1, 1]
     theshape[dimsIn] = nDims 
-    if not data_max:
+    if data_max is None:
         data_max = arr.max(axis=samplesIn)
-    if not data_min:
+    if data_min is None:
         data_min = arr.min(axis=samplesIn)
     norma = (arr - data_min.reshape(theshape) ) / (data_max - data_min).reshape(theshape)
     return norma, data_min, data_max
