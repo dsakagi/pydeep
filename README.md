@@ -1,4 +1,4 @@
-py-deep
-=======
+pydeep
+======
 
 deep learning in numpy
