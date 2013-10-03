@@ -1,6 +1,9 @@
 import os
 import numpy as np
-import rbm_rm as RBM
+import pydeep
+
+from pydeep import neural
+from pydeep import rbm
 
 import matplotlib.pyplot as plt
 import sys
@@ -21,11 +24,11 @@ test_rm = normed[10000:20000,:]
 
 nHidden = 400
 ViewDimensions = (20, 20)   # Should multiply to nHidden
-TP = RBM.RBMTrainParams()
+TP = rbm.RBMTrainParams()
 TP.eta = 0.001
 TP.maxepoch = 15
 
-learner = RBM.GV_RBM(nHidden, train_rm.shape[1])
+learner = rbm.GV_RBM(nHidden, train_rm.shape[1])
 if os.path.isfile('RBMW.npy'):
     print 'Loading previously trained RBM'
     learner.W = np.load('RBMW.npy')
@@ -33,7 +36,7 @@ if os.path.isfile('RBMW.npy'):
     learner.v = np.load('RBMv.npy')
 else:
     print 'Learning RBM'
-    RBM.learn(learner, train_rm, valid_rm, TP)
+    rbm.learn(learner, train_rm, valid_rm, TP)
     np.save('RBMW', learner.W)
     np.save('RBMh', learner.h)
     np.save('RBMv', learner.v)
