@@ -2,4 +2,6 @@
 .project
 .pydevproject
 *.swp
+*.npy
+*.gz
 *~
