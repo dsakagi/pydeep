@@ -4,17 +4,15 @@ import rbm_rm as RBM
 
 import matplotlib.pyplot as plt
 import sys
-sys.path.append('..')
 import utils
-import Preprocess
 
-mnist_dir = os.path.join(os.environ['DATA_HOME'], 'mnist')
-mnist_train_path = os.path.join(mnist_dir, 'MNISTTrainData.npy')
+mnist_dir = os.path.join(os.environ['PYDEEP_HOME'], 'demo', 'mnist')
+mnist_train_path = os.path.join(mnist_dir, 'train-images-idx3-ubyte.npy')
 
 data_rm = np.load(mnist_train_path)
-#[normed, meanv, stdv] = Preprocess.mean_zero_unit_variance(data_rm)
-normed = data_rm
 meanv = data_rm.mean(axis=0)
+normed = data_rm - meanv
+
 
 train_rm = normed[30000:, :]
 valid_rm = normed[:10000, :]
@@ -35,7 +33,7 @@ if os.path.isfile('RBMW.npy'):
     learner.v = np.load('RBMv.npy')
 else:
     print 'Learning RBM'
-    RBM.learn(learner, train_rm, valid_rm, TP) 
+    RBM.learn(learner, train_rm, valid_rm, TP)
     np.save('RBMW', learner.W)
     np.save('RBMh', learner.h)
     np.save('RBMv', learner.v)
