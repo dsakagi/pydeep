@@ -13,6 +13,11 @@ import sys
 mnist_dir = os.path.join(os.environ['PYDEEP_HOME'], 'demo', 'mnist')
 mnist_train_path = os.path.join(mnist_dir, 'train-images-idx3-ubyte.npy')
 
+thisdir = os.path.dirname(os.path.abspath(__file__))
+output_dir = os.path.join(thisdir,'reconstruction_data')
+if not os.path.isdir(output_dir):
+    os.path.makedirs(output_dir)
+
 data_rm = np.load(mnist_train_path).astype('float')
 #scaled = pydeep.utils.utils.scale_to_unit_interval(data_rm.astype('float'))
 #meanv = scaled.mean(axis=0)
@@ -31,17 +36,17 @@ TP.eta = scalar_schedule.LinearSchedule(0.1, 0.001, 20)
 TP.maxepoch = 20
 
 learner = rbm.RBM(nHidden, train_rm.shape[1])
-if os.path.isfile('RBMW.npy'):
+if os.path.isfile(os.path.join(output_dir,'RBMW.npy')):
     print 'Loading previously trained RBM'
-    learner.W = np.load('RBMW.npy')
-    learner.h = np.load('RBMh.npy')
-    learner.v = np.load('RBMv.npy')
+    learner.W = np.load(os.path.join(output_dir,'RBMW.npy'))
+    learner.h = np.load(os.path.join(output_dir,'RBMh.npy'))
+    learner.v = np.load(os.path.join(output_dir,'RBMv.npy'))
 else:
     print 'Learning RBM'
     rbm.learn(learner, train_rm, valid_rm, TP)
-    np.save('RBMW', learner.W)
-    np.save('RBMh', learner.h)
-    np.save('RBMv', learner.v)
+    np.save(os.path.join(output_dir, 'RBMW.npy'), learner.W)
+    np.save(os.path.join(output_dir, 'RBMW.npy'), learner.h)
+    np.save(os.path.join(output_dir, 'RBMW.npy'), learner.v)
 
 Wimg_rm = pydeep.utils.utils.tile_raster_images(learner.W.transpose(), (28, 28), ViewDimensions)
 
