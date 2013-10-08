@@ -1,3 +1,14 @@
+'''This sample script will train a RBM on a small subset of the MNIST
+dataset, and demonstrate the results of using this RBM to reconstruct
+noisy versions of the data.
+
+You should keep in mind that RBMs should in general NOT be used as autoencoders
+because their learning function does not optimize for that function.  This is
+mainly an exercise in using the RBM class
+
+'''
+
+
 import os
 import numpy as np
 import pydeep
@@ -14,7 +25,7 @@ mnist_dir = os.path.join(os.environ['PYDEEP_HOME'], 'demo', 'mnist')
 mnist_train_path = os.path.join(mnist_dir, 'train-images-idx3-ubyte.npy')
 
 thisdir = os.path.dirname(os.path.abspath(__file__))
-output_dir = os.path.join(thisdir,'reconstruction_data')
+output_dir = os.path.join(thisdir,'rbm_denoise_data')
 if not os.path.isdir(output_dir):
     os.path.makedirs(output_dir)
 
