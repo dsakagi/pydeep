@@ -27,7 +27,7 @@ mnist_train_path = os.path.join(mnist_dir, 'train-images-idx3-ubyte.npy')
 thisdir = os.path.dirname(os.path.abspath(__file__))
 output_dir = os.path.join(thisdir,'rbm_denoise_data')
 if not os.path.isdir(output_dir):
-    os.path.makedirs(output_dir)
+    os.makedirs(output_dir)
 
 data_rm = np.load(mnist_train_path).astype('float')
 #scaled = pydeep.utils.utils.scale_to_unit_interval(data_rm.astype('float'))
