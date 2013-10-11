@@ -3,13 +3,13 @@ import numpy.random
 
 import sys
 
-import ScalarSchedule
+from . import scalar_schedule
 
 class RBMTrainParams:
     def __init__(self):
         self.k          = 1        # for Contrastive Divergence
-        self.mu         = ScalarSchedule.LinearSchedule(0.5, 0.99,100)      # momentum update parameter
-        self.eta        = ScalarSchedule.ConstantSchedule(0.1)      # stepsize
+        self.mu         = scalar_schedule.LinearSchedule(0.5, 0.99,100)      # momentum update parameter
+        self.eta        = scalar_schedule.ConstantSchedule(0.1)      # stepsize
         self.penalty    = 0.001    # weight penalty
         self.period     = 10       # pause to save this often
         self.maxepoch   = 100      # train this many iterations
@@ -35,7 +35,7 @@ def getBatches(data, batchsize):
     batches = [None] * nBatches
     indices = range(data.shape[0])
     np.random.shuffle(indices)
-    
+
     curIdx = 0
     for i in xrange(nBatches):
         thisBatchSize = batchsize if data.shape[0] - curIdx > batchsize else data.shape[0] - curIdx
@@ -72,7 +72,7 @@ def contrastiveDivergence(model, data, k=1):
     poshid = model.v2h(data)
     ph_states = BernoulliSample(poshid)
     nh_states = ph_states
-    
+
     for step in xrange(k):
         negdata = model.h2v(nh_states)
         nstates = model.topSample(negdata)
@@ -105,11 +105,11 @@ def learn(model, data, validation, trainparams):
     for epoch in xrange(maxepoch):
         mu = trainparams.mu.get()
         eta = trainparams.eta.get()
-        
+
         if (epoch + 1) % period == 0:
-            # TODO Save a temp of the model at this point  
+            # TODO Save a temp of the model at this point
             pass
-  
+
         for batch in batches:
             dw, dh, dv = contrastiveDivergence(model, batch, k)
             wM = mu * wM + eta * (dw - wp * model.W)
@@ -120,7 +120,7 @@ def learn(model, data, validation, trainparams):
             model.h = model.h + hM
             model.v = model.v + vM
 
-        # Now output some statistics on the hidden representation      
+        # Now output some statistics on the hidden representation
         valhid = model.up(validation)
         valstats = valhid.mean(axis=1)
         recerr = ((validation - model.down(valhid))**2).mean()

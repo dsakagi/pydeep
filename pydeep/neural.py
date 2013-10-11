@@ -1,7 +1,7 @@
 import numpy as np
 import sys
 
-from ScalarSchedule import *
+from . import scalar_schedule
 
 class NetReg:
     def __init__(self):
@@ -16,8 +16,8 @@ class NetTrainParams:
         self.batchsize  =   50
         self.maxepoch   =   100
         self.period     =   10
-        self.mu         =   LinearSchedule(0.5, 0.99, 500)
-        self.eta        =   ExponentialSchedule(10.0, 0.998)
+        self.mu         =   scalar_schedule.LinearSchedule(0.5, 0.99, 500)
+        self.eta        =   scalar_schedule.ExponentialSchedule(10.0, 0.998)
 
 def logistic(x):
     return 1.0 / (1.0 + (np.exp(-x)))
@@ -67,10 +67,10 @@ def SoftmaxUp(inputs, weights, bias, reg):
 
 def DropoutProcess(inputs, reg):
     dropFlips = np.random.random_sample(inputs.shape)
-    usedInput = inputs * (dropFlips > reg.drop_rate);    
+    usedInput = inputs * (dropFlips > reg.drop_rate);
     return usedInput
-     
-    
+
+
 class Layer:
     def __init__(self, nHidden, nVisible, layertype, reg):
         self.nHidden = nHidden
@@ -113,7 +113,7 @@ class Layer:
             return LinearUp(inputs, W, self.h, self.reg)
         else:
             raise Exception(self.layertype + " not understood as a layertype")
-        
+
 
     def down(self, inputs, deriv, error_in):
         error_out = np.dot(  deriv * error_in, self.W.transpose()  )
@@ -213,8 +213,8 @@ class Net:
         for i in xrange(nLayers):
             thetaGrad = np.append(thetaGrad, gradients[i])
         return thetaGrad
-            
-        
+
+
     def setTheta(self, theta):
         curIdx = 0
         for layer in self.Layers:
@@ -229,7 +229,7 @@ class Net:
             layertheta = np.append(layer.W.flatten(), layer.h.flatten())
             theta = np.append(theta, layertheta)
         return theta
-    
+
     def addTheta(self, theta):
         curTheta = self.getTheta()
         newTheta = curTheta + theta
@@ -243,7 +243,7 @@ class Net:
                 no_resize = squared_len <= layer.reg.max_unit_weight
                 resize_params = np.ones(len(squared_len))*no_resize + needs_resize*np.sqrt(layer.reg.max_unit_weight/squared_len)
                 layer.W = layer.W * resize_params
-        
+
 
 
 def getBatches(inputs, targets, tp):
@@ -267,10 +267,10 @@ def train_sgd(model, inputs, targets, tp):
     tsize = model.thetaSize()
     momentum = np.zeros((tsize))
     batchData, batchTargets = getBatches(inputs, targets, tp)
-    
+
     for epoch in xrange(tp.maxepoch):
         mu = tp.mu.get()
-        eta = tp.eta.get() 
+        eta = tp.eta.get()
         for i in xrange(len(batchData)):
             data = batchData[i]
             target = batchTargets[i]
@@ -287,11 +287,11 @@ def train_sgd_valid(model, inputs, targets, validInput, validTargets, tp):
     tsize = model.thetaSize()
     momentum = np.zeros((tsize))
     batchData, batchTargets = getBatches(inputs, targets, tp)
-    
+
     for epoch in xrange(tp.maxepoch):
         mu = tp.mu.get()
-        eta = tp.eta.get() 
-        
+        eta = tp.eta.get()
+
         for i in xrange(len(batchData)):
             data = batchData[i]
             target = batchTargets[i]
