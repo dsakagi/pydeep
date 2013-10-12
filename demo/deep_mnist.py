@@ -62,12 +62,12 @@ def get_rbm(idx, arch, train, valid, tp, output_dir):
 
 for i in xrange(len(lts) / 2):
     print 'Training RBM %i' % i
-    top = len(net.Layers) - 1
+    top = len(net.layers) - 1
     learner = get_rbm(i, arch, rbmtrain, rbmvalid, tp, output_dir)
-    net.Layers[top -i].W = learner.W.transpose()
-    net.Layers[top -i].h = learner.v.copy()
-    net.Layers[i].W = learner.W.copy()
-    net.Layers[i].h = learner.h.copy()
+    net.layers[top -i].W = learner.W.transpose()
+    net.layers[top -i].h = learner.v.copy()
+    net.layers[i].W = learner.W.copy()
+    net.layers[i].h = learner.h.copy()
     rbmtrain = learner.up(rbmtrain)
     rbmvalid = learner.up(rbmvalid)
 print 'Finished'

@@ -4,21 +4,22 @@ MNIST data
 '''
 
 import os
-from pydeep.neural import *
+import matplotlib.pylab as plt
 
+from pydeep.neural import *
 import pydeep.utils.utils
 
 mnist_path = os.path.join(os.environ['PYDEEP_HOME'], 'demo',  'mnist', 'train-images-idx3-ubyte.npy')
 data = np.load(mnist_path).astype('float') / 255
 train = data[:10000,:]
 tp = NetTrainParams()
-tp.maxepoch=20
+tp.maxepoch=200
 tp.batchsize=100
-tp.eta = scalar_schedule.LinearSchedule(.1, 0.01, 20)
+tp.eta = scalar_schedule.ConstantSchedule(0.01)
 tp.mu  = scalar_schedule.ConstantSchedule(0.5)
 arch = [784, 100, 784]
 lts=['Logistic', 'Linear']
-regs = [NetReg() for x in range(2)]
+regs = [NetReg() for lt in lts]
 for reg in regs:
     reg.dropout=True
     reg.drop_rate = 0.5

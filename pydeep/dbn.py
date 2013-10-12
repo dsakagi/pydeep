@@ -6,7 +6,7 @@ class DBN:
         self.n_in = n_in
         self.n_out= n_out
 
-        # determine the architectures for the autoencoder and the 
+        # determine the architectures for the autoencoder and the
         # prediction network
         if isinstance(hidden_arch, int):
             hidden_arch = [hidden_arch]
@@ -17,7 +17,7 @@ class DBN:
         self._init_rbms(hidden_arch, lts, gaussian_input)
         self._init_ae(hidden_arch, lts, gaussian_input)
         self._init_net(hidden_arch, lts, net_regs)
- 
+
     def _init_rbms(self, hidden_arch, lts, gaussian_input):
         self.rbms = [None for i in xrange(len(lts) -1)]
         if gaussian_input:
@@ -27,13 +27,13 @@ class DBN:
         for i in xrange(len(self.rbms) - 1):
             self.rbms[i+1] = RBM.RBM(hidden_arch[i+1], hidden_arch[i])
 
-        
+
     def _init_ae(self, hidden_arch, lts, gaussian_input):
         if len(hidden_arch) > 1:
             ae_arch = [self.n_in] + hidden_arch + hidden_arch[-2::-1] + [self.n_in]
         else:
             ae_arch = [self.n_in] + hidden_arch + [self.n_in]
-        
+
         ae_lts = lts[:-1] + lts[-2::-1]
         if gaussian_input:
             ae_lts[-1] = 'Linear'
@@ -76,22 +76,22 @@ class DBN:
         self.transfer_weights_rbm_2_ae()
         self.pretrain_ae(train, valid, ae_train_params)
         self.transfer_weights_ae_2_net()
-    
+
     def transfer_weights_rbm_2_ae(self):
         for i in xrange(len(self.rbms)):
-            self.ae.Layers[i].W = self.rbms[i].W.copy()
-            self.ae.Layers[i].h = self.rbms[i].h.copy()
+            self.ae.layers[i].W = self.rbms[i].W.copy()
+            self.ae.layers[i].h = self.rbms[i].h.copy()
         for i in xrange(len(self.rbms)):
-            nlay = len(self.ae.Layers)
+            nlay = len(self.ae.layers)
             j = nlay - i - 1
-            self.ae.Layers[j].W = self.rbms[i].W.transpose()
-            self.ae.Layers[j].h = self.rbms[i].v.copy()
+            self.ae.layers[j].W = self.rbms[i].W.transpose()
+            self.ae.layers[j].h = self.rbms[i].v.copy()
 
 
     def transfer_weights_ae_2_net(self):
-        for i in xrange(len(self.net.Layers) - 1):
-            self.net.Layers[i].W = self.ae.Layers[i].W.copy()
-            self.net.Layers[i].h = self.ae.Layers[i].h.copy()
+        for i in xrange(len(self.net.layers) - 1):
+            self.net.layers[i].W = self.ae.layers[i].W.copy()
+            self.net.layers[i].h = self.ae.layers[i].h.copy()
 
     def pretrain_rbm_stack(self, train, valid, rbm_train_params):
         trep = train  #This will be the representation of data at each level
@@ -108,8 +108,8 @@ class DBN:
             ae_train_params = Learning.NetTrainParams()
             ae_train_params.mu = Learning.ConstantSchedule(0.1)
             ae_train_params.eta = Learning.ConstantSchedule(1.0)
-        Learning.train_sgd_valid(self.ae, train, train, valid, valid, ae_train_params)        
-        
+        Learning.train_sgd_valid(self.ae, train, train, valid, valid, ae_train_params)
+
 
     def train(self, train, targets, net_train_params):
         Learning.train_sgd(self.net, train, targets, net_train_params)

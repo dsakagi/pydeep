@@ -149,16 +149,16 @@ def CrossEntropyErr(pred, truth):
 class Net:
     def __init__(self, arch, layertypes, regs, errType='MSE'):
         nLayers = len(layertypes)
-        self.Layers     = []
+        self.layers     = []
         self.errType    = errType
         for i in xrange(nLayers):
             l = Layer(arch[i+1], arch[i], layertypes[i], regs[i])
-            self.Layers += [l];
+            self.layers += [l];
 
     def cost(self, inputs, target):
         regCost = 0
         data = inputs
-        for layer in self.Layers:
+        for layer in self.layers:
             [a, c, d, i] = layer.up(data)
             regCost += c
             data = a
@@ -174,18 +174,18 @@ class Net:
 
     def predict(self, inputs):
         data = inputs
-        for layer in self.Layers:
+        for layer in self.layers:
             [data, c, d, i] = layer.predict(data)
         return data
 
     def thetaSize(self):
         tsize = 0
-        for layer in self.Layers:
+        for layer in self.layers:
             tsize += layer.nHidden * layer.nVisible + layer.nHidden
         return tsize
 
     def netGradient(self, inputs, target):
-        nLayers = len(self.Layers)
+        nLayers = len(self.layers)
         gradients = [None] * nLayers
         costs = [0.] * nLayers
         procIns = [None] * nLayers
@@ -193,9 +193,9 @@ class Net:
 
         data = inputs
         #First go up
-        layerIdxs = range(len(self.Layers))
+        layerIdxs = range(len(self.layers))
         for i in layerIdxs:
-            [act, cost, deriv, procIn] = self.Layers[i].up(data)
+            [act, cost, deriv, procIn] = self.layers[i].up(data)
             costs[i] = cost
             derivs[i] = deriv
             procIns[i] = procIn
@@ -206,7 +206,7 @@ class Net:
         #Then go down
         layerIdxs.reverse()
         for i in layerIdxs:
-            [error, grad] = self.Layers[i].down(procIns[i], derivs[i], error)
+            [error, grad] = self.layers[i].down(procIns[i], derivs[i], error)
             gradients[i] = grad
 
         thetaGrad = np.ndarray((0,0))
@@ -217,7 +217,7 @@ class Net:
 
     def setTheta(self, theta):
         curIdx = 0
-        for layer in self.Layers:
+        for layer in self.layers:
             tsize = layer.nHidden * layer.nVisible + layer.nHidden
             layertheta = theta[curIdx:curIdx + tsize]
             layer.setTheta(layertheta)
@@ -225,7 +225,7 @@ class Net:
 
     def getTheta(self):
         theta = []
-        for layer in self.Layers:
+        for layer in self.layers:
             layertheta = np.append(layer.W.flatten(), layer.h.flatten())
             theta = np.append(theta, layertheta)
         return theta
@@ -236,7 +236,7 @@ class Net:
         self.setTheta(newTheta)
 
     def enforce_constraints(self):
-        for layer in self.Layers:
+        for layer in self.layers:
             if layer.reg.max_constraint:
                 squared_len = (layer.W * layer.W).sum(axis=0)
                 needs_resize = squared_len > layer.reg.max_unit_weight

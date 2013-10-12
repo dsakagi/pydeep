@@ -40,7 +40,7 @@ pydeep.neural.train_sgd(net, train, train, ntp)
 
 
 
-Wimg = pydeep.utils.utils.tile_raster_images(net.Layers[0].W.T, (28, 28), ViewDimensions)
+Wimg = pydeep.utils.utils.tile_raster_images(net.layers[0].W.T, (28, 28), ViewDimensions)
 
 pylab.figure(1)
 pylab.imshow(Wimg)
