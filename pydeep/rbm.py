@@ -124,7 +124,8 @@ def learn(model, data, validation, trainparams):
         valhid = model.up(validation)
         valstats = valhid.mean(axis=1)
         recerr = ((validation - model.down(valhid))**2).mean()
-        print '%d\t%0.6f\t%0.6f\t%0.6f\t%0.6f\t%0.6f\t%0.6f\t%0.6f\t%0.6f\t' %  (epoch, recerr, valstats.mean(), valstats.max(), valstats.min(), valstats.std() )
+        print '%d\t%0.6f\t%0.6f\t%0.6f\t%0.6f\t%0.6f\t%0.6f\t%0.6f\t' %
+           (epoch, recerr, valstats.mean(), valstats.max(), valstats.min(), valstats.std() )
         sys.stdout.flush()
     print 'Learning exited normally.'
 
