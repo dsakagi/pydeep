@@ -300,8 +300,9 @@ def train_sgd_valid(model, inputs, targets, validInput, validTargets, tp):
             momentum -= g
             model.addTheta(eta * momentum)
             model.enforce_constraints()
-        [totalcost, errcost] = model.cost(validInput, validTargets)
-        print "[%d] Sample cost: %f\t%f" % (epoch, totalcost, errcost)
+        [vtotalcost, verrcost] = model.cost(validInput, validTargets)
+        [ttotalcost, terrcost] = model.cost(inputs, targets)
+        print "[%d] Train error: %f\tValidation error: %f" % (epoch, terrcost, verrcost)
         sys.stdout.flush()
 
 
