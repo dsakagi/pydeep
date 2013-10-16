@@ -23,6 +23,9 @@ class ConstantSchedule:
     def __init__(self, v):
         self.v = v
 
+    def __repr__(self):
+        return 'ConstantSchedule: %s' % repr(self.v)
+
     def get(self):
         return self.v
 
@@ -59,6 +62,9 @@ class LinearSchedule:
             self.v += self.delta
         return val
 
+    def __repr__(self):
+        return 'LinearSchedule Current: %f -  Step size: %f - Step: %d' % (self.v, self.delta, self.step)
+
 class ExponentialSchedule:
     '''A scalar which grows/shrinks exponentially.  There is no upper/lower
     which can be set, so beware of numerical issues.
@@ -81,5 +87,8 @@ class ExponentialSchedule:
         val = self.v
         self.v *= self.decay
         return val
+
+    def __repr__(self):
+        return 'ExponentialSchedule Current: %f - Decay rate: %f' % (self.v, self.decay)
 
 

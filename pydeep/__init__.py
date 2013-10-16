@@ -5,4 +5,9 @@ drop-out enabled multi-layer networks
 
 '''
 
+import rbm
+import neural
+import scalar_schedule
+import utils
+
 __all__ = ['dbn', 'rbm', 'neural', 'scalar_schedule', 'utils']
