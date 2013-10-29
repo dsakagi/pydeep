@@ -11,7 +11,7 @@ import pydeep.utils.utils
 
 mnist_path = os.path.join(os.environ['PYDEEP_HOME'], 'demo',  'mnist', 'train-images-idx3-ubyte.npy')
 data = np.load(mnist_path).astype('float') / 255
-train = data[:10000,:]
+train = data
 tp = NetTrainParams()
 tp.maxepoch=200
 tp.batchsize=100
